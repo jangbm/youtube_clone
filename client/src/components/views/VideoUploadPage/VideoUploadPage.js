@@ -48,11 +48,11 @@ function VideoUploadPage(props) {
   const user = useSelector((state) => state.user);
   const [videoTitle, setVideoTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [videoPrivate, setVideoPrivate] = useState(0);
-  const [category, setCategory] = useState(0);
+  const [privacy, setPrivacy] = useState(0);
+  const [category, setCategory] = useState("Film & Animation");
   const [filePath, setFilePath] = useState("");
   const [duration, setDuration] = useState("");
-  const [thumbnail, setThumbnail] = useState("");
+  const [thumbnailPath, setThumbnailPath] = useState("");
 
   const onTitleChange = (e) => {
     setVideoTitle(e.currentTarget.value);
@@ -60,10 +60,12 @@ function VideoUploadPage(props) {
 
   const onDescriptionChange = (e) => {
     setDescription(e.currentTarget.value);
+    // console.log(e.currentTarget.value);
   };
 
   const onPrivateChange = (e) => {
-    setVideoPrivate(e.currentTarget.value);
+    setPrivacy(e.currentTarget.value);
+    // console.log(e.currentTarget.value);
   };
 
   const onCategoryChange = (e) => {
@@ -78,44 +80,45 @@ function VideoUploadPage(props) {
     formData.append("file", files[0]);
     console.log(files);
 
-    // axios.post("/api/video/uploadfiles", formData, config).then((response) => {
-    //   if (response.data.success) {
-    //     let variable = {
-    //       filePath: response.data.filePath,
-    //       fileName: response.data.fileName,
-    //     };
-    //     setFilePath(response.data.filePath);
+    axios.post("/api/video/uploadfiles", formData, config).then((response) => {
+      if (response.data.success) {
+        // console.log(response.data);
+        let variables = {
+          url: response.data.url,
+          fileName: response.data.fileName,
+        };
+        setFilePath(response.data.url);
 
-    //     // gerenate thumbnail with this filepath !
-
-    //     axios.post("/api/video/thumbnail", variable).then((response) => {
-    //       if (response.data.success) {
-    //         setDuration(response.data.fileDuration);
-    //         setThumbnail(response.data.thumbsFilePath);
-    //       } else {
-    //         alert("Failed to make the thumbnails");
-    //       }
-    //     });
-    //   } else {
-    //     alert("failed to save the video in server");
-    //   }
-    // });
+        //썸네일 만들고 state 저장
+        axios.post("/api/video/thumbnail", variables).then((response) => {
+          if (response.data.success) {
+            setDuration(response.data.fileDuration);
+            setThumbnailPath(response.data.filePath);
+            // console.log(response.data.thumbsFilePath);
+          } else {
+            alert("썸네일 생성에 실패하였습니다.");
+          }
+        });
+      } else {
+        alert("비디오 업로드를 실패했습니다.");
+      }
+    });
   };
 
   const onSubmit = (e) => {
     e.preventDefault();
-    let variable = {
-      // writer: user.userData._id,
-      // titile: videoTitle,
-      // description: description,
-      // privacy: videoPrivate,
-      // filePath:,
-      // category: category,
-      // duration:,
-      // thumbnail:,
+    let variables = {
+      writer: user.userData._id,
+      titile: videoTitle,
+      description: description,
+      privacy: privacy,
+      filePath: filePath,
+      category: category,
+      duration: duration,
+      thumbnail: thumbnailPath,
     };
 
-    axios.post("/api/video/uploadVideo", variable).then((response) => {
+    axios.post("/api/video/uploadVideo", variables).then((response) => {
       if (response.data.success) {
         // console.log(response.data);
         message.success("성공적으로 업로드를 했습니다.");
@@ -124,7 +127,7 @@ function VideoUploadPage(props) {
           props.history.push("/");
         }, 3000);
       } else {
-        alert("업로드 실패");
+        alert("비디오 업로드 실패");
       }
     });
   };
@@ -136,7 +139,7 @@ function VideoUploadPage(props) {
       </TitleContainer>
       <Form onSubmit={onSubmit}>
         <Display>
-          <Dropzone onDrop={onDrop} maxSize={10000}>
+          <Dropzone onDrop={onDrop} multiple={false} maxSize={10000000000}>
             {({ getRootProps, getInputProps }) => (
               <Box {...getRootProps()}>
                 <input {...getInputProps()} />
@@ -144,9 +147,14 @@ function VideoUploadPage(props) {
               </Box>
             )}
           </Dropzone>
-          <div>
-            <img src alt />
-          </div>
+          {thumbnailPath && (
+            <div>
+              <img
+                src={`http://localhost:5000/${thumbnailPath}`}
+                alt="thumbnail"
+              />
+            </div>
+          )}
         </Display>
         <br />
         <br />
